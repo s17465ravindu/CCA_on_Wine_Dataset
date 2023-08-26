@@ -1,0 +1,173 @@
+---
+title: "Assignment 2 - S17465"
+author: "S17465"
+date: '2023-07-27'
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Import Dataset
+
+```{r}
+library(readr)
+library(CCA)
+library(CCP)
+library(candisc)
+```
+
+```{r}
+df <- read.csv('E:/Uni Docs/4th year/1st Sem/ST405/Mini Project 2/wine.csv')
+```
+
+### Data Pre-Processing
+
+```{r}
+summary(df)
+```
+
+```{r}
+library(dplyr)
+
+# Check for null values in each column
+missing_values <- df %>%
+  summarise_all(~ sum(is.na(.)))
+
+# Print the number of missing values in each column
+print(missing_values)
+```
+
+```{r}
+colnames(df)
+```
+
+Separate the 13 variables into two groups. The first group has 9 variables Alcohol, Malic_Acid,Ash,Ash_Alcanity,Magnesium,Total_Phenols,Flavanoids,Nonflavanoid_Phenols,Proanthocyanins. The second group has 4 variables Color_Intensity, Hue,OD280 and Proline.
+
+```{r}
+chemical_properties <- cbind(df[,1:9])
+sensory_properties <- cbind(df[,10:13])
+```
+
+```{r}
+chemical_properties
+```
+
+```{r}
+sensory_properties
+```
+
+Standardize all variables and apply CCA . This function will transform each variable to have a mean of 0 and a standard deviation of 1, ensuring that all variables are on the same scale.
+
+```{r}
+library(dplyr)
+
+chemical_properties_st <- chemical_properties %>%
+  mutate(across(everything(), scale))
+
+sensory_properties_st <- sensory_properties %>%
+  mutate(across(everything(), scale))
+
+```
+
+```{r}
+chemical_properties_st
+```
+
+```{r}
+sensory_properties_st
+```
+
+```{r}
+cp_mat <- as.matrix(chemical_properties_st)
+sp_mat <- as.matrix(sensory_properties_st)
+```
+
+### Performing CCA
+
+```{r}
+cca_result <- cc(cp_mat,sp_mat)
+cca_result$cor
+```
+
+### Access Canonical Variates
+
+```{r}
+can_variates_cp <- cca_result$xcoef
+can_variates_sp <- cca_result$ycoef
+rho <- cca_result$cor
+```
+
+### Test for independence between canonical variate pairs
+
+```{r}
+n <- dim(chemical_properties)[1]
+p <- dim(chemical_properties)[2]
+q <- dim(sensory_properties)[2]
+
+print(n)
+print(p)
+print(q)
+print(rho)
+```
+
+```{r}
+library(CCP)
+```
+
+```{r}
+p.asym(rho,n,p,q,tstat = "Wilks")
+p.asym(rho,n,p,q,tstat = "Hotelling")
+p.asym(rho,n,p,q,tstat = "Pillai")
+p.asym(rho,n,p,q,tstat = "Roy")
+```
+
+```{r}
+Wilks(cancor(cp_mat,sp_mat))
+```
+
+### Extract squared canonical correlations
+
+```{r}
+squared_cc <- rho^2
+squared_cc
+```
+
+###  The estimated canonical coefficients
+
+```{r}
+cca_result$xcoef
+```
+
+```{r}
+cca_result$ycoef
+```
+
+### Calculate Loadings
+
+```{r}
+loadings <- comput(cp_mat,sp_mat,cca_result)
+```
+
+```{r}
+loadings$corr.X.xscores
+```
+
+```{r}
+loadings$corr.Y.xscores
+```
+
+```{r}
+loadings$corr.X.yscores
+```
+
+```{r}
+loadings$corr.Y.yscores
+```
+
+### 
